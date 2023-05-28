@@ -1,0 +1,328 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>
+      テトリス
+    </title>
+    <style>
+      .field {
+        width: 300px;
+        height: 600px;
+        background-color: black;
+      }
+      .field .block {
+        width: 30px;
+        height: 30px;
+        float: left;
+        border: solid 1px black;
+        box-sizing: border-box;
+      }
+      .field .block.empty {
+        background-color: gray;
+      }
+      .field .block.green {
+        background-color: green;
+      }
+      .field .block.white {
+        background-color: white;
+      }
+      .field .block.blue {
+        background-color: blue;
+      }
+      .field .block.pink {
+        background-color: pink;
+      }
+      .field .block.red {
+        background-color: red;
+      }
+      .field .block.orange {
+        background-color: orange;
+      }
+      .field .block.cyan {
+        background-color: cyan;
+      }
+    </style>
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script type="text/javascript">
+
+      $(function(){
+        var $field = $(".field");
+        var COUNT_X_BLOCK = 10;
+        var COUNT_Y_BLOCK = 20;
+        var fields = [];
+        var BLOCK_CLASSES = [
+          'empty',
+          'blue',
+          'green',
+          'white',
+          'pink',
+          'red',
+          'orange',
+          'cyan'
+        ];
+        var FALLING_BLOCK_TYPES = [
+          [
+            [1,1],
+            [1,1]
+          ],
+          [
+            [2,2,2,2],
+          ],
+          [
+            [3,3,0],
+            [0,3,3]
+          ],
+          [
+            [0,4,4],
+            [4,4,0]
+          ],
+          [
+            [5,0],
+            [5,5],
+            [5,0]
+          ],
+          [
+            [6,6],
+            [6,0],
+            [6,0]
+          ],
+          [
+            [7,0],
+            [7,0],
+            [7,7]
+          ],
+        ];
+        for(var x = 0; x < COUNT_X_BLOCK; x++) {
+          fields.push(Array(COUNT_Y_BLOCK));
+        }
+        for(var x = 0; x < COUNT_X_BLOCK; x++) {
+          for(var y = 0; y < COUNT_Y_BLOCK; y++) {
+            fields[x][y] = 0;
+          }
+        }
+
+        var fallingBlocks;
+        var fallingBlocksPosition;
+        createNextBlock();
+
+        var timer = setInterval(function(){
+          fall();
+        },1000);
+        
+        function fall(){
+          if(!getFallible()) {
+            nextFallingBlock();
+            return;
+          }
+          fallingBlocksPosition.y += 1;
+          drawBlocks();
+        }
+
+
+        function clearBlocks(){
+          for(var y = 0; y < COUNT_Y_BLOCK; y++) {
+            var isClearable = true;
+            for(var x = 0; x < COUNT_X_BLOCK; x++) {
+              if(!fields[x][y]){
+                isClearable = false;
+              }
+            }
+            if(!isClearable) {
+              continue;
+            }
+            for(var y2 = y - 1; y2 >= 0; y2--) {
+              for(var x = 0; x < COUNT_X_BLOCK; x++) {
+                fields[x][y2 + 1] = fields[x][y2];
+              }
+            }
+          }
+        }
+
+        function getFallible() {
+          if(fallingBlocksPosition.y + fallingBlocks[0].length >= COUNT_Y_BLOCK ) {
+            return false;
+          }
+          for(var x = 0; x < fallingBlocks.length; x++) {
+            for(var y = 0; y < fallingBlocks[x].length; y++) {
+              if(!fallingBlocks[x][y]) {
+                continue;
+              }
+              if(!fields[x + fallingBlocksPosition.x][y + fallingBlocksPosition.y + 1]) {
+                continue;
+              }
+              return false;
+            }
+          }
+
+          return true;
+        }
+        
+        function getMovable(value) {
+          if(fallingBlocksPosition.x + fallingBlocks.length + value > COUNT_X_BLOCK ) {
+            return false;
+          }
+          if(fallingBlocksPosition.x + value < 0 ) {
+            return false;
+          }
+          for(var x = 0; x < fallingBlocks.length; x++) {
+            for(var y = 0; y < fallingBlocks[x].length; y++) {
+              if(!fallingBlocks[x][y]) {
+                continue;
+              }
+              if(!fields[x + fallingBlocksPosition.x + value][y + fallingBlocksPosition.y]) {
+                continue;
+              }
+              return false;
+            }
+          }
+          return true;
+        }
+
+        function nextFallingBlock(){
+          moveFallingBlock();
+          clearBlocks();
+          if(!createNextBlock()) {
+            clearTimeout(timer);
+          }
+          drawBlocks();
+        }
+        
+        function createNextBlock() {
+          var random = Math.floor(Math.random() * FALLING_BLOCK_TYPES.length);
+          fallingBlocks = FALLING_BLOCK_TYPES[random];
+          fallingBlocksPosition = 
+            {x: Math.floor((COUNT_X_BLOCK - fallingBlocks.length) / 2), y: 0};
+          var isGameOver = false;
+          for(var x = 0; x < fallingBlocks.length; x++) {
+            for(var y = 0; y < fallingBlocks[x].length; y++) {
+              if(!fallingBlocks[x][y]) {
+                continue;
+              }
+              if(!fields[x + fallingBlocksPosition.x][y + fallingBlocksPosition.y]) {
+                continue;
+              }
+              isGameOver = true;
+              break;
+            }
+          }
+          if(isGameOver) {
+            alert("ゲームオーバー");
+            return false;
+          }
+          return true;
+        }
+
+        function moveFallingBlock() {
+          for(var x = 0; x < fallingBlocks.length; x++) {
+            for(var y = 0; y < fallingBlocks[0].length; y++) {
+              if(!fallingBlocks[x][y]) {
+                continue;
+              }
+              fields[x + fallingBlocksPosition.x][y + fallingBlocksPosition.y]
+                  = fallingBlocks[x][y];
+            }
+          }
+          fallingBlocks = [[]];
+        }
+        
+        drawBlocks();
+        function getBlock(x, y) {
+          if(fields[x][y] == 0) {
+            if( x - fallingBlocksPosition.x >= 0 &&
+                y - fallingBlocksPosition.y >= 0 &&
+                x - fallingBlocksPosition.x < fallingBlocks.length &&
+                y - fallingBlocksPosition.y < fallingBlocks[0].length) {
+              return fallingBlocks[x - fallingBlocksPosition.x][y - fallingBlocksPosition.y];
+            } else {
+              return fields[x][y];
+            }
+          } else {
+            return fields[x][y];
+          }
+        }
+        function drawBlocks() {
+          $field.empty();
+          for(var y = 0; y < COUNT_Y_BLOCK; y++) {
+            for(var x = 0; x < COUNT_X_BLOCK; x++) {
+              $field.append($("<div class=\"block "+BLOCK_CLASSES[getBlock(x, y)]+"\"></div>"));
+            }
+          }
+        }
+        function getRotatable() {
+          var oldFallingBlocks = fallingBlocks;
+          var newFallingBlocks = [];
+          for(var x = 0; x < oldFallingBlocks[0].length; x++) {
+            newFallingBlocks.push(Array(oldFallingBlocks.length));
+          }
+          if(newFallingBlocks.length + fallingBlocksPosition.x > COUNT_X_BLOCK) {
+            return false;
+          }
+          if(newFallingBlocks[0].length + fallingBlocksPosition.y > COUNT_Y_BLOCK) {
+            return false;
+          }
+          for(var x = 0; x < newFallingBlocks.length; x++) {
+            for(var y = 0; y < newFallingBlocks[x].length; y++) {
+              newFallingBlocks[x][y] = 
+                oldFallingBlocks[y][oldFallingBlocks[0].length - x - 1];
+            }
+          }
+          for(var x = 0; x < newFallingBlocks.length; x++) {
+            for(var y = 0; y < newFallingBlocks[x].length; y++) {
+              if(!newFallingBlocks[x][y]) {
+                continue;
+              }
+              if(!fields[x + fallingBlocksPosition.x][y + fallingBlocksPosition.y]) {
+                continue;
+              }
+              return false;
+            }
+          }
+          return true;
+        }
+        $(window).keydown(function(e){
+          switch(e.keyCode) {
+            case 39:
+              if(getMovable(1)) {
+                fallingBlocksPosition.x += 1;
+                drawBlocks();
+              }
+              break;
+            case 37:
+              if(getMovable(-1)) {
+                fallingBlocksPosition.x -= 1;
+                drawBlocks();
+              }
+              break;
+            case 38:
+              if(getRotatable()) {
+                var oldFallingBlocks = fallingBlocks;
+                fallingBlocks = [];
+                for(var x = 0; x < oldFallingBlocks[0].length; x++) {
+                  fallingBlocks.push(Array(oldFallingBlocks.length));
+                }
+                for(var x = 0; x < fallingBlocks.length; x++) {
+                  for(var y = 0; y < fallingBlocks[x].length; y++) {
+                    fallingBlocks[x][y] = 
+                      oldFallingBlocks[y][oldFallingBlocks[0].length - x - 1];
+                  }
+                }
+                drawBlocks();
+              }
+              break;
+            case 40:
+              if(getFallible()) {
+                fall();
+              }
+              break;
+          }
+        });
+      });
+
+    </script>
+  </head>
+  <body>
+    <div class="field">
+    </div>
+  </body>
+</html>
